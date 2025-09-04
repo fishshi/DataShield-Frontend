@@ -29,7 +29,7 @@ const handleCommand = (command) => {
       type: "warning",
     })
       .then(async () => {
-        logoutService();
+        await logoutService();
         tokenStore.removeToken();
         userInfoStore.removeInfo();
 
