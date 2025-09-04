@@ -2,7 +2,6 @@
 import { ref, onMounted } from "vue";
 import { User, Crop, EditPen, SwitchButton, CaretBottom, Coin, HomeFilled, List } from "@element-plus/icons-vue";
 import { ElMessage, ElMessageBox } from "element-plus";
-import axios from "axios";
 import defaultAvatar from "@/assets/default.png";
 
 import { useRouter } from "vue-router";
@@ -12,7 +11,7 @@ import { useTokenStore } from "@/stores/token";
 const tokenStore = useTokenStore();
 
 import useUserInfoStore from "@/stores/userInfo";
-import { userInfoService } from "@/api/user";
+import { userInfoService, logoutService } from "@/api/user";
 const userInfoStore = useUserInfoStore();
 
 //调用函数,获取用户信息
@@ -30,6 +29,7 @@ const handleCommand = (command) => {
       type: "warning",
     })
       .then(async () => {
+        logoutService();
         tokenStore.removeToken();
         userInfoStore.removeInfo();
 

@@ -5,7 +5,7 @@ const useUserInfoStore = defineStore(
   () => {
     const info = ref({});
 
-    const setInfo = (newInfo) => {
+    const setInfo = (newInfo: { id: string; username: string; email: string; phone: string }) => {
       info.value = newInfo;
     };
 

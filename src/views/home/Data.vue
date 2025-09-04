@@ -211,7 +211,7 @@
 import { ref, onMounted } from "vue";
 import { ElMessage } from "element-plus";
 import { Refresh, Upload, Connection, Document, Delete, UploadFilled } from "@element-plus/icons-vue";
-import axios from "axios";
+import request from "@/utils/request";
 
 /* ================ 响应式数据 ================ */
 // 标签页
@@ -265,7 +265,7 @@ const remoteRules = {
 // 获取本地数据库列表
 async function fetchLocalDatabases() {
   try {
-    const { data } = await axios.get("/api/data/getLocalDatabases");
+    const data = await request.get("/data/getLocalDatabases");
     if (data.code === 200) {
       localDatabases.value = data.data || [];
     } else {
@@ -280,7 +280,7 @@ async function fetchLocalDatabases() {
 async function fetchRemoteDatabases() {
   remoteLoading.value = true;
   try {
-    const { data } = await axios.get("/api/data/getRemoteDatabases");
+    const data = await request.get("/data/getRemoteDatabases");
     if (data.code === 200) {
       remoteDatabases.value = data.data || [];
     } else {
@@ -296,7 +296,7 @@ async function fetchRemoteDatabases() {
 // 获取数据表列表
 async function fetchTables(dbName, isRemote) {
   try {
-    const { data } = await axios.get("/api/data/getAllTables", {
+    const data = await request.get("/data/getAllTables", {
       params: { dbName, isRemote },
     });
     if (data.code === 200) {
@@ -314,7 +314,7 @@ async function fetchTables(dbName, isRemote) {
 // 获取表字段
 async function fetchColumns(dbName, tbName, isRemote) {
   try {
-    const { data } = await axios.get("/api/data/getColumns", {
+    const data = await request.get("/data/getColumns", {
       params: { dbName, tbName, isRemote },
     });
     if (data.code === 200) {
@@ -332,7 +332,7 @@ async function fetchColumns(dbName, tbName, isRemote) {
 // 获取表数据
 async function fetchRecords(dbName, tbName, isRemote) {
   try {
-    const { data } = await axios.get("/api/data/getRecords", {
+    const data = await request.get("/data/getRecords", {
       params: { dbName, tbName, isRemote },
     });
     if (data.code === 200) {
@@ -350,7 +350,7 @@ async function fetchRecords(dbName, tbName, isRemote) {
 // 删除数据库
 async function deleteDatabase(dbName) {
   try {
-    const { data } = await axios.delete(`/api/data/dropDatabase/${dbName}`);
+    const data = await request.delete(`/data/dropDatabase/${dbName}`);
     if (data.code === 200) {
       ElMessage.success("删除成功");
       // 清空相关状态
@@ -375,7 +375,7 @@ async function uploadSqlFile(file) {
   formData.append("file", file);
 
   try {
-    const { data } = await axios.post("/api/data/uploadSql", formData, {
+    const data = await request.post("/data/uploadSql", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
     if (data.code === 200) {
@@ -396,7 +396,7 @@ async function uploadSqlFile(file) {
 // 添加远程数据库
 async function addRemoteDatabase(params) {
   try {
-    const { data } = await axios.post("/api/data/addRemoteDatabase", params);
+    const data = await request.post("/data/addRemoteDatabase", params);
     if (data.code === 200) {
       ElMessage.success("远程数据库添加成功");
       remoteDialogVisible.value = false;
@@ -415,7 +415,7 @@ async function addRemoteDatabase(params) {
 // 删除远程数据库
 async function deleteRemoteDatabase(id) {
   try {
-    const { data } = await axios.delete(`/api/data/deleteRemoteDatabase/${id}`);
+    const data = await request.delete(`/data/deleteRemoteDatabase/${id}`);
     if (data.code === 200) {
       ElMessage.success("删除成功");
       // 清空选中状态

@@ -5,7 +5,7 @@ export const useTokenStore = defineStore(
   () => {
     const token = ref("");
 
-    const setToken = (newToken) => {
+    const setToken = (newToken: string) => {
       token.value = newToken;
     };
 

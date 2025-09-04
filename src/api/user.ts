@@ -27,7 +27,7 @@ export const userInfoService = () => {
 };
 
 // 修改个人信息
-export const userInfoUpdateService = (userInfoData: { email: string, phone: string }) => {
+export const userInfoUpdateService = (userInfoData: { email: string; phone: string }) => {
   return request.put("/user/updateUserInfo", userInfoData, {
     headers: { "Content-Type": "application/json" },
   });
@@ -47,10 +47,15 @@ export const userAvatarUpdateService = (avatarUrl: string) => {
 // 修改密码
 export const userPasswordUpdateService = (oldPassword: string, newPassword: string) => {
   return request.patch(
-    "/user/updatePassword",
+    "/auth/updatePassword",
     { oldPassword, newPassword },
     {
       headers: { "Content-Type": "application/json" },
     }
   );
+};
+
+// 退出登录
+export const logoutService = () => {
+  return request.post("/user/logout");
 };

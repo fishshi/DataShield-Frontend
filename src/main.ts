@@ -6,7 +6,7 @@ import "element-plus/dist/index.css";
 import router from "@/router";
 import App from "./App.vue";
 import { createPinia } from "pinia";
-import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
+import piniaPluginPersistedstate from "pinia-plugin-persistedstate";
 import locale from "element-plus/es/locale/lang/zh-cn";
 
 const app = createApp(App);

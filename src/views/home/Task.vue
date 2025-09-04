@@ -146,7 +146,7 @@
 import { ref, reactive, onMounted, onBeforeUnmount } from "vue";
 import { ElMessage } from "element-plus";
 import { Refresh, Plus } from "@element-plus/icons-vue";
-import axios from "axios";
+import request from "@/utils/request";
 
 /* ---------------- 响应式数据 ---------------- */
 // 任务列表
@@ -202,7 +202,7 @@ function statusColor(status) {
 async function fetchTasks() {
   tableLoading.value = true;
   try {
-    const { data } = await axios.get("/api/task/getAllTasks");
+    const data = await request.get("/task/getAllTasks");
     if (data.code === 200) {
       taskList.value = data.data.map((item) => ({
         ...item,
@@ -223,7 +223,7 @@ async function fetchTasks() {
 // 删除任务
 async function deleteTask(id) {
   try {
-    const { data } = await axios.delete(`/api/task/deleteTask/${id}`);
+    const data = await request.delete(`/task/deleteTask/${id}`);
     if (data.code === 200) {
       ElMessage.success("删除成功");
       fetchTasks();
@@ -240,12 +240,12 @@ async function viewResult(task) {
   currentTask.value = task;
   resultLoading.value = true;
   try {
-    const { data: colRes } = await axios.get("/data/getColumns", {
+    const colRes = await request.get("/data/getColumns", {
       params: { dbName: task.dbName, tbName: task.targetTable, isRemote: false },
     });
     if (colRes.code !== 200) throw new Error(colRes.msg || "获取列失败");
     resultColumns.value = colRes.data;
-    const { data: recordRes } = await axios.get("/data/getRecords", {
+    const recordRes = await request.get("/data/getRecords", {
       params: { dbName: task.dbName, tbName: task.targetTable, isRemote: false },
     });
     if (recordRes.code !== 200) throw new Error(recordRes.msg || "获取数据失败");
@@ -260,10 +260,10 @@ async function viewResult(task) {
 async function downloadResult(task) {
   try {
     const [{ data: colRes }, { data: recordRes }] = await Promise.all([
-      axios.get("/data/getColumns", {
+      request.get("/data/getColumns", {
         params: { dbName: task.dbName, tbName: task.targetTable, isRemote: false },
       }),
-      axios.get("/data/getRecords", {
+      request.get("/data/getRecords", {
         params: { dbName: task.dbName, tbName: task.targetTable, isRemote: false },
       }),
     ]);
@@ -290,7 +290,7 @@ async function downloadResult(task) {
 // 获取数据库列表
 async function fetchDatabases() {
   try {
-    const { data } = await axios.get("/data/getLocalDatabases");
+    const data = await request.get("/data/getLocalDatabases");
     if (data.code === 200) dbOptions.value = data.data;
     else ElMessage.error(data.msg || "获取数据库失败");
   } catch (e) {
@@ -302,7 +302,7 @@ async function fetchTables(db) {
   tbOptions.value = [];
   colOptions.value = [];
   try {
-    const { data } = await axios.get("/data/getAllTables", {
+    const data = await request.get("/data/getAllTables", {
       params: { dbName: db, isRemote: false },
     });
     if (data.code === 200) tbOptions.value = data.data;
@@ -315,7 +315,7 @@ async function fetchTables(db) {
 async function fetchColumns(db, tb) {
   colOptions.value = [];
   try {
-    const { data } = await axios.get("/data/getColumns", {
+    const data = await request.get("/data/getColumns", {
       params: { dbName: db, tbName: tb, isRemote: false },
     });
     if (data.code === 200) colOptions.value = data.data;
@@ -374,7 +374,7 @@ async function submitForm() {
     };
     // 编辑模式
     if (isEdit.value) {
-      const { data } = await axios.put("/api/task/updateTask", payload);
+      const data = await request.put("/task/updateTask", payload);
       if (data.code === 200) {
         ElMessage.success("更新成功");
         formVisible.value = false;
@@ -384,7 +384,7 @@ async function submitForm() {
       }
     } else {
       // 新建模式
-      const { data } = await axios.post("/api/task/createTask", payload);
+      const data = await request.post("/task/createTask", payload);
       if (data.code === 200) {
         ElMessage.success("创建成功");
         formVisible.value = false;
