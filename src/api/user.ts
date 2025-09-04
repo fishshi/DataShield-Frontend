@@ -23,7 +23,7 @@ export const canRegisterService = (username) => {
 
 // 获取用户详细信息
 export const userInfoService = () => {
-  return request.get("/user/getUser");
+  return request.get("/user/getUserInfo");
 };
 
 // 修改个人信息

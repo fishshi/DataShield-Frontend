@@ -6,11 +6,10 @@ import "element-plus/dist/index.css";
 import router from "@/router";
 import App from "./App.vue";
 import { createPinia } from "pinia";
-import { createPersistedState } from "pinia-persistedstate-plugin";
-import locale from "element-plus/dist/locale/zh-cn.js";
+import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
+import locale from "element-plus/es/locale/lang/zh-cn";
 
 const app = createApp(App);
 const pinia = createPinia();
-const persist = createPersistedState();
-pinia.use(persist);
+pinia.use(piniaPluginPersistedstate);
 app.use(pinia).use(router).use(ElementPlus, { locale }).mount("#app");

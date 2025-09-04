@@ -11,7 +11,7 @@ const instance = axios.create({ baseURL });
 instance.interceptors.request.use(
   (config) => {
     const tokenStore = useTokenStore();
-    if (tokenStore.token) config.headers.token = tokenStore.token;
+    if (tokenStore.token) config.headers.Authorization = tokenStore.token;
     return config;
   },
   (err) => {

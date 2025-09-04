@@ -43,12 +43,6 @@ const handleCommand = (command) => {
     router.push("/user/" + command);
   }
 };
-
-onMounted(() => {
-  axios.get("https://api.oioweb.cn/api/common/OneDayEnglish").then((response) => {
-    dailyEnglish.value = response.data.result;
-  });
-});
 </script>
 
 <template>
