@@ -5,11 +5,17 @@
       <div class="card-header">
         <span>脱敏任务管理</span>
         <div>
-          <el-button type="primary" @click="handleRefresh">
-            <el-icon><Refresh /></el-icon> 刷新
+          <el-button type="primary" @click="fetchTasks">
+            <el-icon>
+              <Refresh />
+            </el-icon>
+            刷新
           </el-button>
           <el-button type="success" @click="handleCreate">
-            <el-icon><Plus /></el-icon> 新建任务
+            <el-icon>
+              <Plus />
+            </el-icon>
+            新建任务
           </el-button>
         </div>
       </div>
@@ -17,7 +23,6 @@
 
     <!-- 2. 任务列表 -->
     <el-table v-loading="tableLoading" :data="taskList" stripe style="width: 100%; margin-bottom: 20px">
-      <el-table-column prop="id" label="任务ID" width="80" />
       <el-table-column prop="taskName" label="任务名称" />
       <el-table-column prop="dbName" label="数据库" />
       <el-table-column prop="tbName" label="数据表" />
@@ -40,10 +45,10 @@
       <!-- 操作列 -->
       <el-table-column label="操作" width="280">
         <template #default="scope">
-          <el-button size="small" @click="handleView(scope.row)"> 查看结果 </el-button>
-          <el-button size="small" type="primary" @click="handleDownload(scope.row)"> 下载 </el-button>
+          <el-button size="small" @click="viewResult(scope.row)"> 查看结果 </el-button>
+          <el-button size="small" type="primary" @click="downloadResult(scope.row)"> 下载 </el-button>
           <el-button size="small" @click="handleEdit(scope.row)"> 编辑 </el-button>
-          <el-popconfirm title="确定删除该任务吗？" @confirm="handleDelete(scope.row.id)">
+          <el-popconfirm title="确定删除该任务吗？" @confirm="deleteTask(scope.row.id)">
             <template #reference>
               <el-button size="small" type="danger">删除</el-button>
             </template>
@@ -203,36 +208,23 @@ async function fetchTasks() {
   tableLoading.value = true;
   try {
     const data = await request.get("/task/getAllTasks");
-    if (data.code === 200) {
-      taskList.value = data.data.map((item) => ({
-        ...item,
-        fields: item.fields || [],
-        targetTable: item.targetTable || "",
-      }));
-      // 启停轮询
-      handlePoll();
-    } else {
-      ElMessage.error(data.msg || "获取任务列表失败");
-    }
-  } catch (e) {
-    ElMessage.error("网络异常：" + e.message);
+    taskList.value = data.data.map((item) => ({
+      ...item,
+      tbName: item.dbTable,
+      fields: item.dbColumns.split(",") || [],
+      targetTable: item.targetTable || "",
+    }));
+    // 启停轮询
+    handlePoll();
   } finally {
     tableLoading.value = false;
   }
 }
 // 删除任务
 async function deleteTask(id) {
-  try {
-    const data = await request.delete(`/task/deleteTask/${id}`);
-    if (data.code === 200) {
-      ElMessage.success("删除成功");
-      fetchTasks();
-    } else {
-      ElMessage.error(data.msg || "删除失败");
-    }
-  } catch (e) {
-    ElMessage.error("网络异常：" + e.message);
-  }
+  const data = await request.delete(`/task/deleteTask/${id}`);
+  ElMessage.success("删除成功");
+  fetchTasks();
 }
 // 查看结果
 async function viewResult(task) {
@@ -243,86 +235,60 @@ async function viewResult(task) {
     const colRes = await request.get("/data/getColumns", {
       params: { dbName: task.dbName, tbName: task.targetTable, isRemote: false },
     });
-    if (colRes.code !== 200) throw new Error(colRes.msg || "获取列失败");
     resultColumns.value = colRes.data;
     const recordRes = await request.get("/data/getRecords", {
       params: { dbName: task.dbName, tbName: task.targetTable, isRemote: false },
     });
-    if (recordRes.code !== 200) throw new Error(recordRes.msg || "获取数据失败");
     resultData.value = recordRes.data;
-  } catch (e) {
-    ElMessage.error(e.message);
   } finally {
     resultLoading.value = false;
   }
 }
 // 下载结果
 async function downloadResult(task) {
-  try {
-    const [{ data: colRes }, { data: recordRes }] = await Promise.all([
-      request.get("/data/getColumns", {
-        params: { dbName: task.dbName, tbName: task.targetTable, isRemote: false },
-      }),
-      request.get("/data/getRecords", {
-        params: { dbName: task.dbName, tbName: task.targetTable, isRemote: false },
-      }),
-    ]);
-    if (colRes.code !== 200 || recordRes.code !== 200) {
-      throw new Error(colRes.msg || recordRes.msg || "下载失败");
-    }
-    const columns = colRes.data;
-    const rows = recordRes.data;
-    const header = columns.join(",");
-    const body = rows.map((r) => columns.map((c) => r[c] ?? "").join(",")).join("\n");
-    const csv = `${header}\n${body}`;
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = `${task.taskName}_${task.targetTable}.csv`;
-    link.click();
-    ElMessage.success("下载成功");
-  } catch (e) {
-    ElMessage.error(e.message);
-  }
+  const [{ data: colRes }, { data: recordRes }] = await Promise.all([
+    request.get("/data/getColumns", {
+      params: { dbName: task.dbName, tbName: task.targetTable, isRemote: false },
+    }),
+    request.get("/data/getRecords", {
+      params: { dbName: task.dbName, tbName: task.targetTable, isRemote: false },
+    }),
+  ]);
+  const columns = colRes.data;
+  const rows = recordRes.data;
+  const header = columns.join(",");
+  const body = rows.map((r) => columns.map((c) => r[c] ?? "").join(",")).join("\n");
+  const csv = `${header}\n${body}`;
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = `${task.taskName}_${task.targetTable}.csv`;
+  link.click();
+  ElMessage.success("下载成功");
 }
 
 /* ---------------- 新建/编辑相关 ---------------- */
 // 获取数据库列表
 async function fetchDatabases() {
-  try {
-    const data = await request.get("/data/getLocalDatabases");
-    if (data.code === 200) dbOptions.value = data.data;
-    else ElMessage.error(data.msg || "获取数据库失败");
-  } catch (e) {
-    ElMessage.error("网络异常：" + e.message);
-  }
+  const data = await request.get("/data/getLocalDatabases");
+  dbOptions.value = data.data;
 }
 // 获取表列表
 async function fetchTables(db) {
   tbOptions.value = [];
   colOptions.value = [];
-  try {
-    const data = await request.get("/data/getAllTables", {
-      params: { dbName: db, isRemote: false },
-    });
-    if (data.code === 200) tbOptions.value = data.data;
-    else ElMessage.error(data.msg || "获取表失败");
-  } catch (e) {
-    ElMessage.error("网络异常：" + e.message);
-  }
+  const data = await request.get("/data/getAllTables", {
+    params: { dbName: db, isRemote: false },
+  });
+  tbOptions.value = data.data;
 }
 // 获取字段列表
 async function fetchColumns(db, tb) {
   colOptions.value = [];
-  try {
-    const data = await request.get("/data/getColumns", {
-      params: { dbName: db, tbName: tb, isRemote: false },
-    });
-    if (data.code === 200) colOptions.value = data.data;
-    else ElMessage.error(data.msg || "获取字段失败");
-  } catch (e) {
-    ElMessage.error("网络异常：" + e.message);
-  }
+  const data = await request.get("/data/getColumns", {
+    params: { dbName: db, tbName: tb, isRemote: false },
+  });
+  colOptions.value = data.data;
 }
 // 选择数据库
 function onDbChange(db) {
@@ -375,26 +341,16 @@ async function submitForm() {
     // 编辑模式
     if (isEdit.value) {
       const data = await request.put("/task/updateTask", payload);
-      if (data.code === 200) {
-        ElMessage.success("更新成功");
-        formVisible.value = false;
-        fetchTasks();
-      } else {
-        ElMessage.error(data.msg || "更新失败");
-      }
+      ElMessage.success("更新成功");
+      formVisible.value = false;
+      fetchTasks();
     } else {
       // 新建模式
       const data = await request.post("/task/createTask", payload);
-      if (data.code === 200) {
-        ElMessage.success("创建成功");
-        formVisible.value = false;
-        fetchTasks();
-      } else {
-        ElMessage.error(data.msg || "创建失败");
-      }
+      ElMessage.success("创建成功");
+      formVisible.value = false;
+      fetchTasks();
     }
-  } catch (e) {
-    ElMessage.error(e.message || "校验未通过");
   } finally {
     saveLoading.value = false;
   }
@@ -421,13 +377,11 @@ function handlePoll() {
 }
 
 /* ---------------- 事件处理 ---------------- */
-function handleRefresh() {
-  fetchTasks();
-}
 function handleCreate() {
   isEdit.value = false;
   formVisible.value = true;
 }
+
 function handleEdit(row) {
   isEdit.value = true;
   // 回填数据
@@ -448,15 +402,6 @@ function handleEdit(row) {
   fetchColumns(taskForm.dbName, taskForm.tbName);
   formVisible.value = true;
 }
-function handleView(row) {
-  viewResult(row);
-}
-function handleDownload(row) {
-  downloadResult(row);
-}
-function handleDelete(id) {
-  deleteTask(id);
-}
 
 /* ---------------- 生命周期 ---------------- */
 onMounted(() => {
@@ -474,6 +419,7 @@ onBeforeUnmount(() => {
   min-height: 100%;
   box-sizing: border-box;
   padding: 20px;
+
   .card-header {
     display: flex;
     justify-content: space-between;
