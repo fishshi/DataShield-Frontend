@@ -1,6 +1,17 @@
 <script setup>
 import { ref, onMounted } from "vue";
-import { User, Crop, EditPen, SwitchButton, CaretBottom, Coin, HomeFilled, MostlyCloudy, List, Search } from "@element-plus/icons-vue";
+import {
+  User,
+  Crop,
+  EditPen,
+  SwitchButton,
+  CaretBottom,
+  Coin,
+  HomeFilled,
+  MostlyCloudy,
+  List,
+  Search,
+} from "@element-plus/icons-vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import defaultAvatar from "@/assets/default.png";
 

@@ -3,7 +3,7 @@
     <!-- 顶部标题 + 操作按钮 -->
     <template #header>
       <div class="card-header">
-        <span>数据库管理</span>
+        <span>远程数据管理</span>
         <div>
           <el-button type="primary" @click="handleRefresh">
             <el-icon><Refresh /></el-icon> 刷新
