@@ -8,8 +8,8 @@
           <el-button type="primary" @click="handleRefresh">
             <el-icon><Refresh /></el-icon> 刷新
           </el-button>
-          <el-button type="success" @click="uploadDialogVisible = true">
-            <el-icon><Upload /></el-icon> 上传SQL
+          <el-button type="warning" @click="remoteDialogVisible = true">
+            <el-icon><Connection /></el-icon> 添加远程数据库
           </el-button>
         </div>
       </div>
@@ -17,79 +17,50 @@
 
     <!-- 数据库切换标签页 -->
     <el-tabs v-model="activeTab" @tab-change="handleTabChange">
-      <!-- 本地数据库标签页 -->
-      <el-row :gutter="20">
-        <!-- 左侧：数据库和表列表 -->
-        <el-col :span="8">
-          <el-card shadow="hover">
-            <template #header>
-              <span>数据库列表</span>
-            </template>
-            <!-- 数据库选择 -->
-            <el-select
-              v-model="selectedLocalDb"
-              placeholder="请选择数据库"
-              style="width: 100%; margin-bottom: 16px"
-              @change="handleLocalDbChange"
-            >
-              <el-option v-for="db in localDatabases" :key="db" :label="db" :value="db" />
-            </el-select>
-
-            <!-- 数据表列表 -->
-            <div v-if="selectedLocalDb" class="table-list">
-              <el-divider content-position="left">数据表</el-divider>
-              <el-scrollbar height="300px">
-                <div
-                  v-for="table in localTables"
-                  :key="table"
-                  class="table-item"
-                  :class="{ active: selectedLocalTable === table }"
-                  @click="handleLocalTableClick(table)"
-                >
-                  <el-icon><Document /></el-icon>
-                  {{ table }}
-                </div>
-              </el-scrollbar>
-            </div>
-
-            <!-- 删除数据库按钮 -->
-            <el-popconfirm v-if="selectedLocalDb" title="确定删除该数据库吗？此操作不可恢复！" @confirm="handleDeleteDatabase">
+      <!-- 远程数据库列表 -->
+      <el-table v-loading="remoteLoading" :data="remoteDatabases" stripe style="width: 100%; margin-bottom: 20px">
+        <el-table-column prop="id" label="ID" width="60" />
+        <el-table-column prop="dbHost" label="主机地址" />
+        <el-table-column prop="dbPort" label="端口" width="80" />
+        <el-table-column prop="dbName" label="数据库名" />
+        <el-table-column prop="dbUsername" label="用户名" />
+        <el-table-column label="操作" width="200">
+          <template #default="scope">
+            <el-button size="small" @click="handleViewRemote(scope.row)"> 查看数据 </el-button>
+            <el-popconfirm title="确定删除该远程数据库配置吗？" @confirm="handleDeleteRemote(scope.row.id)">
               <template #reference>
-                <el-button type="danger" size="small" style="margin-top: 16px">
-                  <el-icon><Delete /></el-icon> 删除数据库
-                </el-button>
+                <el-button size="small" type="danger">删除</el-button>
               </template>
             </el-popconfirm>
-          </el-card>
-        </el-col>
+          </template>
+        </el-table-column>
+      </el-table>
 
-        <!-- 右侧：数据展示 -->
-        <el-col :span="16">
-          <el-card shadow="hover">
-            <template #header>
-              <span>数据预览</span>
-              <el-button v-if="tableData.length > 0" type="primary" size="small" style="float: right" @click="handleExportCsv">
-                导出CSV
-              </el-button>
-            </template>
+      <!-- 远程数据库数据展示 -->
+      <el-card v-if="selectedRemoteDb" shadow="hover">
+        <template #header>
+          <span>{{ selectedRemoteDb.dbName }} - 数据预览</span>
+        </template>
 
-            <!-- 字段信息 -->
-            <div v-if="tableColumns.length > 0" class="column-info">
-              <el-tag v-for="col in tableColumns" :key="col" style="margin: 0 4px 4px 0">
-                {{ col }}
-              </el-tag>
-            </div>
+        <el-row :gutter="20">
+          <!-- 表选择 -->
+          <el-col :span="6">
+            <el-select
+              v-model="selectedRemoteTable"
+              placeholder="选择数据表"
+              style="width: 100%"
+              @change="handleRemoteTableChange"
+            >
+              <el-option v-for="table in remoteTables" :key="table" :label="table" :value="table" />
+            </el-select>
+          </el-col>
+        </el-row>
 
-            <!-- 数据表格 -->
-            <el-table v-loading="dataLoading" :data="tableData" stripe max-height="400" style="margin-top: 16px">
-              <el-table-column v-for="col in tableColumns" :key="col" :prop="col" :label="col" show-overflow-tooltip />
-            </el-table>
-
-            <!-- 空状态 -->
-            <el-empty v-if="!selectedLocalTable && !dataLoading" description="请选择要查看的数据表" />
-          </el-card>
-        </el-col>
-      </el-row>
+        <!-- 远程数据表格 -->
+        <el-table v-loading="remoteDataLoading" :data="remoteTableData" stripe max-height="350" style="margin-top: 16px">
+          <el-table-column v-for="col in remoteTableColumns" :key="col" :prop="col" :label="col" show-overflow-tooltip />
+        </el-table>
+      </el-card>
     </el-tabs>
 
     <!-- 上传SQL文件弹窗 -->
@@ -154,15 +125,6 @@ import request from "@/utils/request";
 // 标签页
 const activeTab = ref("local");
 
-// 本地数据库相关
-const localDatabases = ref([]);
-const selectedLocalDb = ref("");
-const localTables = ref([]);
-const selectedLocalTable = ref("");
-const tableColumns = ref([]);
-const tableData = ref([]);
-const dataLoading = ref(false);
-
 // 远程数据库相关
 const remoteDatabases = ref([]);
 const remoteLoading = ref(false);
@@ -199,17 +161,20 @@ const remoteRules = {
 };
 
 /* ================ 网络请求 ================ */
-// 获取本地数据库列表
-async function fetchLocalDatabases() {
+// 获取远程数据库列表
+async function fetchRemoteDatabases() {
+  remoteLoading.value = true;
   try {
-    const data = await request.get("/data/getLocalDatabases");
+    const data = await request.get("/data/getRemoteDatabases");
     if (data.code === 200) {
-      localDatabases.value = data.data || [];
+      remoteDatabases.value = data.data || [];
     } else {
-      ElMessage.error(data.msg || "获取本地数据库失败");
+      ElMessage.error(data.msg || "获取远程数据库失败");
     }
   } catch (e) {
     ElMessage.error("网络异常：" + e.message);
+  } finally {
+    remoteLoading.value = false;
   }
 }
 
@@ -267,46 +232,42 @@ async function fetchRecords(dbName, tbName, isRemote) {
   }
 }
 
-// 删除数据库
-async function deleteDatabase(dbName) {
+// 添加远程数据库
+async function addRemoteDatabase(params) {
   try {
-    const data = await request.delete(`/data/dropDatabase/${dbName}`);
+    const data = await request.post("/data/addRemoteDatabase", params);
     if (data.code === 200) {
-      ElMessage.success("删除成功");
-      // 清空相关状态
-      selectedLocalDb.value = "";
-      localTables.value = [];
-      selectedLocalTable.value = "";
-      tableColumns.value = [];
-      tableData.value = [];
-      // 刷新数据库列表
-      await fetchLocalDatabases();
+      ElMessage.success("远程数据库添加成功");
+      remoteDialogVisible.value = false;
+      // 重置表单
+      remoteFormRef.value?.resetFields();
+      // 刷新远程数据库列表
+      await fetchRemoteDatabases();
     } else {
-      ElMessage.error(data.msg || "删除失败");
+      ElMessage.error(data.msg || "添加失败");
     }
   } catch (e) {
     ElMessage.error("网络异常：" + e.message);
   }
 }
 
-// 上传SQL文件
-async function uploadSqlFile(file) {
-  const formData = new FormData();
-  formData.append("file", file);
-
+// 删除远程数据库
+async function deleteRemoteDatabase(id) {
   try {
-    const data = await request.post("/data/uploadSql", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
+    const data = await request.delete(`/data/deleteRemoteDatabase/${id}`);
     if (data.code === 200) {
-      ElMessage.success("SQL文件上传成功");
-      uploadDialogVisible.value = false;
-      selectedFile.value = null;
-      uploadRef.value?.clearFiles();
-      // 刷新本地数据库列表
-      await fetchLocalDatabases();
+      ElMessage.success("删除成功");
+      // 清空选中状态
+      if (selectedRemoteDb.value?.id === id) {
+        selectedRemoteDb.value = null;
+        remoteTables.value = [];
+        selectedRemoteTable.value = "";
+        remoteTableColumns.value = [];
+        remoteTableData.value = [];
+      }
+      await fetchRemoteDatabases();
     } else {
-      ElMessage.error(data.msg || "上传失败");
+      ElMessage.error(data.msg || "删除失败");
     }
   } catch (e) {
     ElMessage.error("网络异常：" + e.message);
@@ -316,57 +277,56 @@ async function uploadSqlFile(file) {
 /* ================ 事件处理 ================ */
 // 刷新
 function handleRefresh() {
-  fetchLocalDatabases();
+  fetchRemoteDatabases();
 }
 
-// 本地数据库选择变化
-async function handleLocalDbChange() {
-  localTables.value = [];
-  selectedLocalTable.value = "";
-  tableColumns.value = [];
-  tableData.value = [];
-
-  if (selectedLocalDb.value) {
-    localTables.value = await fetchTables(selectedLocalDb.value, false);
-  }
+// 标签页切换
+function handleTabChange() {
+  fetchRemoteDatabases();
 }
 
-// 本地表点击
-async function handleLocalTableClick(table) {
-  selectedLocalTable.value = table;
-  dataLoading.value = true;
+// 添加远程数据库
+function handleAddRemote() {
+  remoteFormRef.value?.validate((valid) => {
+    if (valid) {
+      addRemoteDatabase(remoteForm.value);
+    }
+  });
+}
 
+// 查看远程数据库
+async function handleViewRemote(row) {
+  selectedRemoteDb.value = row;
+  remoteTables.value = [];
+  selectedRemoteTable.value = "";
+  remoteTableColumns.value = [];
+  remoteTableData.value = [];
+
+  // 获取表列表
+  remoteTables.value = await fetchTables(row.dbName, true);
+}
+
+// 远程表选择变化
+async function handleRemoteTableChange() {
+  if (!selectedRemoteTable.value || !selectedRemoteDb.value) return;
+
+  remoteDataLoading.value = true;
   try {
-    // 获取字段和数据
     const [columns, records] = await Promise.all([
-      fetchColumns(selectedLocalDb.value, table, false),
-      fetchRecords(selectedLocalDb.value, table, false),
+      fetchColumns(selectedRemoteDb.value.dbName, selectedRemoteTable.value, true),
+      fetchRecords(selectedRemoteDb.value.dbName, selectedRemoteTable.value, true),
     ]);
 
-    tableColumns.value = columns;
-    tableData.value = records;
+    remoteTableColumns.value = columns;
+    remoteTableData.value = records;
   } finally {
-    dataLoading.value = false;
+    remoteDataLoading.value = false;
   }
 }
 
-// 删除数据库
-function handleDeleteDatabase() {
-  deleteDatabase(selectedLocalDb.value);
-}
-
-// 文件选择
-function handleFileChange(file) {
-  selectedFile.value = file.raw;
-}
-
-// 上传SQL
-function handleUploadSql() {
-  if (!selectedFile.value) {
-    ElMessage.warning("请选择要上传的SQL文件");
-    return;
-  }
-  uploadSqlFile(selectedFile.value);
+// 删除远程数据库
+function handleDeleteRemote(id) {
+  deleteRemoteDatabase(id);
 }
 
 // 导出CSV
@@ -393,7 +353,7 @@ function handleExportCsv() {
 
 /* ================ 生命周期 ================ */
 onMounted(() => {
-  fetchLocalDatabases();
+  fetchRemoteDatabases();
 });
 </script>
 

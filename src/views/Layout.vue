@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted } from "vue";
-import { User, Crop, EditPen, SwitchButton, CaretBottom, Coin, HomeFilled, List } from "@element-plus/icons-vue";
+import { User, Crop, EditPen, SwitchButton, CaretBottom, Coin, HomeFilled, MostlyCloudy, List, Search } from "@element-plus/icons-vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import defaultAvatar from "@/assets/default.png";
 
@@ -60,13 +60,25 @@ const handleCommand = (command) => {
           <el-icon>
             <Coin />
           </el-icon>
-          <span>数据管理</span>
+          <span>托管数据管理</span>
+        </el-menu-item>
+        <el-menu-item index="/home/remotedata">
+          <el-icon>
+            <MostlyCloudy />
+          </el-icon>
+          <span>远程数据管理</span>
+        </el-menu-item>
+        <el-menu-item index="/home/identify">
+          <el-icon>
+            <Search />
+          </el-icon>
+          <span>敏感数据识别</span>
         </el-menu-item>
         <el-menu-item index="/home/task">
           <el-icon>
             <List />
           </el-icon>
-          <span>任务管理</span>
+          <span>脱敏任务管理</span>
         </el-menu-item>
       </el-menu>
     </el-aside>
