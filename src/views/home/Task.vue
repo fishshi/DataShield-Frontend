@@ -33,7 +33,14 @@
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="strategy" label="策略" />
+      <el-table-column prop="strategy" label="策略">
+        <template #default="scope">
+          <el-tag v-if="scope.row.maskRule === 1" size="small">掩码</el-tag>
+          <el-tag v-else-if="scope.row.maskRule === 2" size="small">哈希</el-tag>
+          <el-tag v-else-if="scope.row.maskRule === 3" size="small">加密</el-tag>
+          <el-tag v-else size="small">未知</el-tag>
+        </template>
+      </el-table-column>
       <el-table-column prop="status" label="状态" width="90">
         <template #default="scope">
           <el-tag :type="statusColor(scope.row.status)">
@@ -67,7 +74,7 @@
           {{ currentTask?.targetTable || "-" }}
         </el-descriptions-item>
         <el-descriptions-item label="最后修改">
-          {{ currentTask?.updateTime || "-" }}
+          {{ formatTime(currentTask?.updateTime) || "-" }}
         </el-descriptions-item>
       </el-descriptions>
 
@@ -144,6 +151,7 @@ import { ref, reactive, onMounted, onBeforeUnmount } from "vue";
 import { ElMessage } from "element-plus";
 import { Refresh, Plus } from "@element-plus/icons-vue";
 import request from "@/utils/request";
+import formatTime from "@/utils/day";
 
 /* ---------------- 响应式数据 ---------------- */
 // 任务列表
