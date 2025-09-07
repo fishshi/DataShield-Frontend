@@ -60,6 +60,9 @@
       <el-table v-loading="resultLoading" :data="resultData" height="400" stripe style="margin-top: 16px">
         <el-table-column v-for="col in resultColumns" :key="col" :prop="col" :label="col" />
       </el-table>
+      <template #footer>
+        <el-button type="primary" @click="goCreateDataMaskTask"> 数据脱敏 </el-button>
+      </template>
     </el-dialog>
 
     <!-- 4. 新建/编辑任务弹窗 -->
@@ -102,6 +105,7 @@ import { ref, reactive, onMounted, onBeforeUnmount } from "vue";
 import { ElMessage } from "element-plus";
 import { Refresh, Plus } from "@element-plus/icons-vue";
 import request from "@/utils/request";
+import router from "@/router";
 
 /* ---------------- 响应式数据 ---------------- */
 // 任务列表
@@ -125,7 +129,7 @@ const taskForm = reactive({
   id: undefined, // 编辑时写入
   identifyName: "",
   dbName: "",
-  tbName: ""
+  tbName: "",
 });
 // 下拉数据源
 const dbOptions = ref([]);
@@ -153,7 +157,7 @@ async function fetchTasks() {
   try {
     const data = await request.get("/identify/getAllIdentify");
     taskList.value = data.data.map((item) => ({
-      ...item
+      ...item,
     }));
     // 启停轮询
     handlePoll();
@@ -215,8 +219,7 @@ function onDbChange(db) {
   fetchTables(db);
 }
 // 选择表
-function onTbChange(tb) {
-}
+function onTbChange(tb) {}
 
 // 表单校验
 const rules = reactive({
@@ -233,7 +236,7 @@ function resetForm() {
     id: undefined,
     identifyName: "",
     dbName: "",
-    tbName: ""
+    tbName: "",
   });
   taskFormRef.value?.clearValidate();
 }
@@ -265,6 +268,11 @@ async function submitForm() {
     saveLoading.value = false;
   }
 }
+
+const goCreateDataMaskTask = () => {
+  localStorage.setItem("currentCreating", JSON.stringify(currentTask.value));
+  router.push("/home/task");
+};
 
 /* ---------------- 轮询 ---------------- */
 function startPoll() {

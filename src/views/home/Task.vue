@@ -123,18 +123,10 @@
         <!-- 预留：定时 / 频率 -->
         <el-form-item label="执行策略" prop="scheduleType">
           <el-radio-group v-model="taskForm.scheduleType">
-            <el-radio :label="0">立即执行</el-radio>
-            <el-radio :label="1">定时执行</el-radio>
-            <el-radio :label="2">周期执行</el-radio>
+            <el-radio :label="0">单次执行</el-radio>
+            <el-radio :label="1">每天执行</el-radio>
+            <el-radio :label="2">每周执行</el-radio>
           </el-radio-group>
-        </el-form-item>
-
-        <el-form-item v-if="taskForm.scheduleType === 1" label="执行时间" prop="scheduleTime">
-          <el-date-picker v-model="taskForm.scheduleTime" type="datetime" placeholder="选择日期时间" />
-        </el-form-item>
-
-        <el-form-item v-if="taskForm.scheduleType === 2" label="Cron表达式" prop="cron">
-          <el-input v-model="taskForm.cron" placeholder="例如：0 0 2 * * ?" />
         </el-form-item>
       </el-form>
 
@@ -179,9 +171,7 @@ const taskForm = reactive({
   fields: [],
   maskRule: 1,
   targetTable: "",
-  scheduleType: 0, // 0立即 1定时 2周期
-  scheduleTime: "",
-  cron: "",
+  scheduleType: 0,
 });
 // 下拉数据源
 const dbOptions = ref([]);
@@ -321,8 +311,6 @@ function resetForm() {
     maskRule: 1,
     targetTable: "",
     scheduleType: 0,
-    scheduleTime: "",
-    cron: "",
   });
   taskFormRef.value?.clearValidate();
 }
@@ -394,8 +382,6 @@ function handleEdit(row) {
     maskRule: row.maskRule || 1,
     targetTable: row.targetTable || "",
     scheduleType: row.scheduleType || 0,
-    scheduleTime: row.scheduleTime || "",
-    cron: row.cron || "",
   });
   // 拉联下拉数据
   fetchTables(taskForm.dbName);
@@ -407,6 +393,15 @@ function handleEdit(row) {
 onMounted(() => {
   fetchTasks();
   fetchDatabases();
+  const currentCreating = localStorage.getItem("currentCreating");
+  if (currentCreating) {
+    const task = JSON.parse(currentCreating);
+    Object.assign(taskForm, task);
+    taskForm.fields = task.columns.split(",") || [];
+    formVisible.value = true;
+    isEdit.value = false;
+    localStorage.removeItem("currentCreating");
+  }
 });
 onBeforeUnmount(() => {
   stopPoll();
