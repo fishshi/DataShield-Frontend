@@ -62,12 +62,14 @@ const register = async () => {
   });
   if (valid) {
     tokenStore.removeToken();
-    await userRegisterService({
+    let result = await userRegisterService({
       username: registerData.value.username,
       password: registerData.value.password,
     });
     ElMessage.success("注册成功");
+    tokenStore.setToken(result.data);
     isRegister.value = false;
+    router.push("/");
   }
 };
 
