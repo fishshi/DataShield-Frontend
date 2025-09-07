@@ -35,7 +35,7 @@ const uploadRef = ref();
 //选择图片成功
 const uploadSuccess = (result) => {
   console.log(result);
-  if (result.code == 1) {
+  if (result.code == 200) {
     imgUrl.value = result.data;
     ElMessage.success("已选中图片，请点击上传头像按钮上传");
   } else {
@@ -67,8 +67,8 @@ const updateAvatar = async () => {
           class="avatar-uploader"
           :show-file-list="false"
           :auto-upload="true"
-          action="/api/uploadavatar"
-          :headers="{ token: token }"
+          action="/api/user/uploadAvatar"
+          :headers="{ authorization: token }"
           :before-upload="beforeUpload"
           :on-success="uploadSuccess"
           :on-error="() => ElMessage.error('失败,请检查网络设置并稍后重试或联系系统管理员')"
