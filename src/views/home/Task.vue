@@ -183,6 +183,7 @@ const taskForm = reactive({
 });
 // 下拉数据源
 const dbOptions = ref([]);
+const dbIsRemoteMap = {};
 const tbOptions = ref([]);
 const colOptions = ref([]);
 
@@ -231,11 +232,11 @@ async function viewResult(task) {
   resultLoading.value = true;
   try {
     const colRes = await request.get("/data/getColumns", {
-      params: { dbName: task.dbName, tbName: task.targetTable, isRemote: false },
+      params: { dbName: task.dbName, tbName: task.targetTable, isRemote: dbIsRemoteMap[task.dbName] },
     });
     resultColumns.value = colRes.data;
     const recordRes = await request.get("/data/getRecords", {
-      params: { dbName: task.dbName, tbName: task.targetTable, isRemote: false },
+      params: { dbName: task.dbName, tbName: task.targetTable, isRemote: dbIsRemoteMap[task.dbName] },
     });
     resultData.value = recordRes.data;
   } finally {
@@ -246,10 +247,10 @@ async function viewResult(task) {
 async function downloadResult(task) {
   const [{ data: colRes }, { data: recordRes }] = await Promise.all([
     request.get("/data/getColumns", {
-      params: { dbName: task.dbName, tbName: task.targetTable, isRemote: false },
+      params: { dbName: task.dbName, tbName: task.targetTable, isRemote: dbIsRemoteMap[task.dbName] },
     }),
     request.get("/data/getRecords", {
-      params: { dbName: task.dbName, tbName: task.targetTable, isRemote: false },
+      params: { dbName: task.dbName, tbName: task.targetTable, isRemote: dbIsRemoteMap[task.dbName] },
     }),
   ]);
   const columns = colRes.data;
@@ -268,15 +269,25 @@ async function downloadResult(task) {
 /* ---------------- 新建/编辑相关 ---------------- */
 // 获取数据库列表
 async function fetchDatabases() {
-  const data = await request.get("/data/getLocalDatabases");
-  dbOptions.value = data.data;
+  Object.keys(dbIsRemoteMap).forEach(key => delete dbIsRemoteMap[key]);
+  dbOptions.value = [];
+  const localData = await request.get("/data/getLocalDatabases");
+  for (const item of localData.data) {
+    dbIsRemoteMap[item] = 0;
+    dbOptions.value.push(item);
+  }
+  const remoteData = await request.get("/data/getRemoteDatabases");
+  for (const item of remoteData.data) {
+    dbIsRemoteMap[item.dbName] = 1;
+    dbOptions.value.push(item.dbName);
+  }
 }
 // 获取表列表
 async function fetchTables(db) {
   tbOptions.value = [];
   colOptions.value = [];
   const data = await request.get("/data/getAllTables", {
-    params: { dbName: db, isRemote: false },
+    params: { dbName: db, isRemote: dbIsRemoteMap[db] },
   });
   tbOptions.value = data.data;
 }
@@ -284,7 +295,7 @@ async function fetchTables(db) {
 async function fetchColumns(db, tb) {
   colOptions.value = [];
   const data = await request.get("/data/getColumns", {
-    params: { dbName: db, tbName: tb, isRemote: false },
+    params: { dbName: db, tbName: tb, isRemote: dbIsRemoteMap[db] },
   });
   colOptions.value = data.data;
 }
@@ -329,7 +340,7 @@ async function submitForm() {
   try {
     const payload = {
       ...taskForm,
-      isRemote: 0,
+      isRemote: dbIsRemoteMap[taskForm.dbName],
       dbTable: taskForm.tbName,
       dbColumns: taskForm.fields.join(","),
       status: 0,

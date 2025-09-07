@@ -19,10 +19,9 @@
     <el-tabs v-model="activeTab" @tab-change="handleTabChange">
       <!-- 远程数据库列表 -->
       <el-table v-loading="remoteLoading" :data="remoteDatabases" stripe style="width: 100%; margin-bottom: 20px">
-        <el-table-column prop="id" label="ID" width="60" />
+        <el-table-column prop="dbName" label="数据库名" />
         <el-table-column prop="dbHost" label="主机地址" />
         <el-table-column prop="dbPort" label="端口" width="80" />
-        <el-table-column prop="dbName" label="数据库名" />
         <el-table-column prop="dbUsername" label="用户名" />
         <el-table-column label="操作" width="200">
           <template #default="scope">
