@@ -194,7 +194,7 @@ async function viewResult(task) {
 /* ---------------- 新建/编辑相关 ---------------- */
 // 获取数据库列表
 async function fetchDatabases() {
-  Object.keys(dbIsRemoteMap).forEach(key => delete dbIsRemoteMap[key]);
+  Object.keys(dbIsRemoteMap).forEach((key) => delete dbIsRemoteMap[key]);
   dbOptions.value = [];
   const localData = await request.get("/data/getLocalDatabases");
   for (const item of localData.data) {

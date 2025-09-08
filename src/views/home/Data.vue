@@ -201,16 +201,8 @@ const remoteRules = {
 /* ================ 网络请求 ================ */
 // 获取本地数据库列表
 async function fetchLocalDatabases() {
-  try {
-    const data = await request.get("/data/getLocalDatabases");
-    if (data.code === 200) {
-      localDatabases.value = data.data || [];
-    } else {
-      ElMessage.error(data.msg || "获取本地数据库失败");
-    }
-  } catch (e) {
-    ElMessage.error("网络异常：" + e.message);
-  }
+  const data = await request.get("/data/getLocalDatabases");
+  localDatabases.value = data.data || [];
 }
 
 // 获取数据表列表
@@ -219,14 +211,8 @@ async function fetchTables(dbName, isRemote) {
     const data = await request.get("/data/getAllTables", {
       params: { dbName, isRemote },
     });
-    if (data.code === 200) {
-      return data.data || [];
-    } else {
-      ElMessage.error(data.msg || "获取数据表失败");
-      return [];
-    }
+    return data.data || [];
   } catch (e) {
-    ElMessage.error("网络异常：" + e.message);
     return [];
   }
 }
@@ -237,14 +223,8 @@ async function fetchColumns(dbName, tbName, isRemote) {
     const data = await request.get("/data/getColumns", {
       params: { dbName, tbName, isRemote },
     });
-    if (data.code === 200) {
-      return data.data || [];
-    } else {
-      ElMessage.error(data.msg || "获取字段失败");
-      return [];
-    }
+    return data.data || [];
   } catch (e) {
-    ElMessage.error("网络异常：" + e.message);
     return [];
   }
 }
@@ -255,62 +235,39 @@ async function fetchRecords(dbName, tbName, isRemote) {
     const data = await request.get("/data/getRecords", {
       params: { dbName, tbName, isRemote },
     });
-    if (data.code === 200) {
-      return data.data || [];
-    } else {
-      ElMessage.error(data.msg || "获取数据失败");
-      return [];
-    }
+    return data.data || [];
   } catch (e) {
-    ElMessage.error("网络异常：" + e.message);
     return [];
   }
 }
 
 // 删除数据库
 async function deleteDatabase(dbName) {
-  try {
-    const data = await request.delete(`/data/dropDatabase/${dbName}`);
-    if (data.code === 200) {
-      ElMessage.success("删除成功");
-      // 清空相关状态
-      selectedLocalDb.value = "";
-      localTables.value = [];
-      selectedLocalTable.value = "";
-      tableColumns.value = [];
-      tableData.value = [];
-      // 刷新数据库列表
-      await fetchLocalDatabases();
-    } else {
-      ElMessage.error(data.msg || "删除失败");
-    }
-  } catch (e) {
-    ElMessage.error("网络异常：" + e.message);
-  }
+  const data = await request.delete(`/data/dropDatabase/${dbName}`);
+  ElMessage.success("删除成功");
+  // 清空相关状态
+  selectedLocalDb.value = "";
+  localTables.value = [];
+  selectedLocalTable.value = "";
+  tableColumns.value = [];
+  tableData.value = [];
+  // 刷新数据库列表
+  await fetchLocalDatabases();
 }
 
 // 上传SQL文件
 async function uploadSqlFile(file) {
   const formData = new FormData();
   formData.append("file", file);
-
-  try {
-    const data = await request.post("/data/uploadSql", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-    if (data.code === 200) {
-      ElMessage.success("SQL文件上传成功");
-      uploadDialogVisible.value = false;
-      selectedFile.value = null;
-      uploadRef.value?.clearFiles();
-      // 刷新本地数据库列表
-      await fetchLocalDatabases();
-    } else {
-      ElMessage.error(data.msg || "上传失败");
-    }
-  } catch (e) {
-    ElMessage.error("网络异常：" + e.message);
-  }
+  const data = await request.post("/data/uploadSql", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  ElMessage.success("SQL文件上传成功");
+  uploadDialogVisible.value = false;
+  selectedFile.value = null;
+  uploadRef.value?.clearFiles();
+  // 刷新本地数据库列表
+  await fetchLocalDatabases();
 }
 
 /* ================ 事件处理 ================ */

@@ -165,13 +165,7 @@ async function fetchRemoteDatabases() {
   remoteLoading.value = true;
   try {
     const data = await request.get("/data/getRemoteDatabases");
-    if (data.code === 200) {
-      remoteDatabases.value = data.data || [];
-    } else {
-      ElMessage.error(data.msg || "获取远程数据库失败");
-    }
-  } catch (e) {
-    ElMessage.error("网络异常：" + e.message);
+    remoteDatabases.value = data.data || [];
   } finally {
     remoteLoading.value = false;
   }
@@ -183,14 +177,8 @@ async function fetchTables(dbName, isRemote) {
     const data = await request.get("/data/getAllTables", {
       params: { dbName, isRemote },
     });
-    if (data.code === 200) {
-      return data.data || [];
-    } else {
-      ElMessage.error(data.msg || "获取数据表失败");
-      return [];
-    }
+    return data.data || [];
   } catch (e) {
-    ElMessage.error("网络异常：" + e.message);
     return [];
   }
 }
@@ -201,14 +189,8 @@ async function fetchColumns(dbName, tbName, isRemote) {
     const data = await request.get("/data/getColumns", {
       params: { dbName, tbName, isRemote },
     });
-    if (data.code === 200) {
-      return data.data || [];
-    } else {
-      ElMessage.error(data.msg || "获取字段失败");
-      return [];
-    }
+    return data.data || [];
   } catch (e) {
-    ElMessage.error("网络异常：" + e.message);
     return [];
   }
 }
@@ -219,58 +201,36 @@ async function fetchRecords(dbName, tbName, isRemote) {
     const data = await request.get("/data/getRecords", {
       params: { dbName, tbName, isRemote },
     });
-    if (data.code === 200) {
-      return data.data || [];
-    } else {
-      ElMessage.error(data.msg || "获取数据失败");
-      return [];
-    }
+    return data.data || [];
   } catch (e) {
-    ElMessage.error("网络异常：" + e.message);
     return [];
   }
 }
 
 // 添加远程数据库
 async function addRemoteDatabase(params) {
-  try {
-    const data = await request.post("/data/addRemoteDatabase", params);
-    if (data.code === 200) {
-      ElMessage.success("远程数据库添加成功");
-      remoteDialogVisible.value = false;
-      // 重置表单
-      remoteFormRef.value?.resetFields();
-      // 刷新远程数据库列表
-      await fetchRemoteDatabases();
-    } else {
-      ElMessage.error(data.msg || "添加失败");
-    }
-  } catch (e) {
-    ElMessage.error("网络异常：" + e.message);
-  }
+  const data = await request.post("/data/addRemoteDatabase", params);
+  ElMessage.success("远程数据库添加成功");
+  remoteDialogVisible.value = false;
+  // 重置表单
+  remoteFormRef.value?.resetFields();
+  // 刷新远程数据库列表
+  await fetchRemoteDatabases();
 }
 
 // 删除远程数据库
 async function deleteRemoteDatabase(id) {
-  try {
-    const data = await request.delete(`/data/deleteRemoteDatabase/${id}`);
-    if (data.code === 200) {
-      ElMessage.success("删除成功");
-      // 清空选中状态
-      if (selectedRemoteDb.value?.id === id) {
-        selectedRemoteDb.value = null;
-        remoteTables.value = [];
-        selectedRemoteTable.value = "";
-        remoteTableColumns.value = [];
-        remoteTableData.value = [];
-      }
-      await fetchRemoteDatabases();
-    } else {
-      ElMessage.error(data.msg || "删除失败");
-    }
-  } catch (e) {
-    ElMessage.error("网络异常：" + e.message);
+  const data = await request.delete(`/data/deleteRemoteDatabase/${id}`);
+  ElMessage.success("删除成功");
+  // 清空选中状态
+  if (selectedRemoteDb.value?.id === id) {
+    selectedRemoteDb.value = null;
+    remoteTables.value = [];
+    selectedRemoteTable.value = "";
+    remoteTableColumns.value = [];
+    remoteTableData.value = [];
   }
+  await fetchRemoteDatabases();
 }
 
 /* ================ 事件处理 ================ */
