@@ -245,7 +245,7 @@ async function viewResult(task) {
 }
 // 下载结果
 async function downloadResult(task) {
-  const [{ data: colRes }, { data: recordRes }] = await Promise.all([
+  const [colRes, recordRes] = await Promise.all([
     request.get("/data/getColumns", {
       params: { dbName: task.dbName, tbName: task.targetTable, isRemote: dbIsRemoteMap[task.dbName] },
     }),
@@ -416,6 +416,7 @@ onMounted(() => {
   if (currentCreating) {
     const task = JSON.parse(currentCreating);
     Object.assign(taskForm, task);
+    fetchColumns(task.dbName, task.tbName)
     taskForm.fields = task.columns.split(",") || [];
     formVisible.value = true;
     isEdit.value = false;
