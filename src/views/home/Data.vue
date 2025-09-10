@@ -52,14 +52,22 @@
               </el-scrollbar>
             </div>
 
-            <!-- 删除数据库按钮 -->
-            <el-popconfirm v-if="selectedLocalDb" title="确定删除该数据库吗？此操作不可恢复！" @confirm="handleDeleteDatabase">
-              <template #reference>
-                <el-button type="danger" size="small" style="margin-top: 16px">
-                  <el-icon><Delete /></el-icon> 删除数据库
-                </el-button>
-              </template>
-            </el-popconfirm>
+            <!-- 下载 & 删除数据库按钮 -->
+            <div v-if="selectedLocalDb" style="margin-top: 16px; display: flex; gap: 8px">
+              <!-- 下载数据库 -->
+              <el-button type="primary" size="small" @click="handleDownloadDatabase">
+                <el-icon><Download /></el-icon> 下载数据库
+              </el-button>
+
+              <!-- 删除数据库 -->
+              <el-popconfirm title="确定删除该数据库吗？此操作不可恢复！" @confirm="handleDeleteDatabase">
+                <template #reference>
+                  <el-button type="danger" size="small">
+                    <el-icon><Delete /></el-icon> 删除数据库
+                  </el-button>
+                </template>
+              </el-popconfirm>
+            </div>
           </el-card>
         </el-col>
 
@@ -72,13 +80,6 @@
                 导出CSV
               </el-button>
             </template>
-
-            <!-- 字段信息 -->
-            <div v-if="tableColumns.length > 0" class="column-info">
-              <el-tag v-for="col in tableColumns" :key="col" style="margin: 0 4px 4px 0">
-                {{ col }}
-              </el-tag>
-            </div>
 
             <!-- 数据表格 -->
             <el-table v-loading="dataLoading" :data="tableData" stripe max-height="400" style="margin-top: 16px">
@@ -147,8 +148,10 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import { ElMessage } from "element-plus";
-import { Refresh, Upload, Connection, Document, Delete, UploadFilled } from "@element-plus/icons-vue";
+import { Refresh, Upload, Connection, Document, Delete, UploadFilled, Download } from "@element-plus/icons-vue";
 import request from "@/utils/request";
+import axios from "axios";
+import { useTokenStore } from "@/stores/token";
 
 /* ================ 响应式数据 ================ */
 // 标签页
@@ -324,6 +327,34 @@ function handleUploadSql() {
     return;
   }
   uploadSqlFile(selectedFile.value);
+}
+
+// 下载数据库 SQL 脚本
+async function handleDownloadDatabase() {
+  if (!selectedLocalDb.value) {
+    ElMessage.warning("请选择数据库");
+    return;
+  }
+
+  try {
+    const response = await axios.get("/api/data/downloadSql", {
+      headers: { Authorization: useTokenStore().token},
+      params: { dbName: selectedLocalDb.value },
+      responseType: "blob", // 关键：后端返回的是字节流
+    });
+
+    // 创建 Blob 下载
+    const blob = new Blob([response.data], { type: "application/sql;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `${selectedLocalDb.value}.sql`;
+    link.click();
+    URL.revokeObjectURL(link.href);
+
+    ElMessage.success("数据库导出成功");
+  } catch (e) {
+    ElMessage.error("导出失败: " + (e.message || "未知错误"));
+  }
 }
 
 // 导出CSV
