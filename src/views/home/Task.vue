@@ -409,9 +409,9 @@ function handleEdit(row) {
 }
 
 /* ---------------- 生命周期 ---------------- */
-onMounted(() => {
+onMounted(async () => {
   fetchTasks();
-  fetchDatabases();
+  await fetchDatabases();
   const currentCreating = localStorage.getItem("currentCreating");
   if (currentCreating) {
     const task = JSON.parse(currentCreating);

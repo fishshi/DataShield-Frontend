@@ -427,16 +427,12 @@ onBeforeUnmount(() => {
           </template>
         </el-table-column>
       </el-table>
-      
-      <!-- 空状态 -->
-      <el-empty v-if="allTasks.length === 0" description="暂无运行任务" />
     </el-card>
   </div>
 </template>
 
 <style lang="scss" scoped>
 .dashboard-container {
-  padding: 20px;
   height: 100%;
   display: flex;
   flex-direction: column;
