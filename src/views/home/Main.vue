@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount, computed } from "vue";
 import { ElMessage } from "element-plus";
+import { Refresh } from "@element-plus/icons-vue";
 import request from "@/utils/request";
 import * as echarts from "echarts";
 import formatTime from "@/utils/day";
@@ -296,8 +297,8 @@ onBeforeUnmount(() => {
           <template #header>
             <div class="card-header">
               <span>任务总览</span>
-              <el-button text type="primary" @click="refreshAll">
-                <el-icon><Refresh /></el-icon>
+              <el-button type="primary" @click="refreshAll">
+                <el-icon><Refresh /></el-icon> 刷新
               </el-button>
             </div>
           </template>
@@ -344,12 +345,10 @@ onBeforeUnmount(() => {
             <!-- 本地数据库 -->
             <div v-if="localDatabases.length > 0" class="db-section">
               <div class="section-title">
-                <el-icon><Folder /></el-icon>
                 <span>本地数据库</span>
               </div>
               <div class="db-items">
                 <div v-for="db in localDatabases" :key="db" class="db-item">
-                  <el-icon><Database /></el-icon>
                   <span class="db-name">{{ db }}</span>
                   <el-tag size="small" type="success">本地</el-tag>
                 </div>
@@ -359,12 +358,10 @@ onBeforeUnmount(() => {
             <!-- 远程数据库 -->
             <div v-if="remoteDatabases.length > 0" class="db-section">
               <div class="section-title">
-                <el-icon><Connection /></el-icon>
                 <span>远程数据库</span>
               </div>
               <div class="db-items">
                 <div v-for="db in remoteDatabases" :key="db.id" class="db-item">
-                  <el-icon><Database /></el-icon>
                   <span class="db-name">{{ db.dbName }}</span>
                   <el-tag size="small">{{ dbTypeText(db.dbType) }}</el-tag>
                   <span class="db-host">{{ db.dbHost }}:{{ db.dbPort }}</span>

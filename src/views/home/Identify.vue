@@ -51,14 +51,17 @@
     <!-- 3. 任务结果弹窗 -->
     <el-dialog v-model="resultVisible" title="任务结果" width="70%" :close-on-click-modal="false">
       <el-descriptions :column="2" border>
-        <el-descriptions-item label="敏感数据字段">
-          {{ currentTask?.columns }}
+        <el-descriptions-item label="识别任务名称">
+          {{ currentTask?.identifyName }}
+        </el-descriptions-item>
+        <el-descriptions-item label="最后修改">
+          {{ formatTime(currentTask?.updateTime) || "-" }}
         </el-descriptions-item>
       </el-descriptions>
 
       <!-- 结果数据表格 -->
       <el-table v-loading="resultLoading" :data="resultData" height="400" stripe style="margin-top: 16px">
-        <el-table-column v-for="col in resultColumns" :key="col" :prop="col" :label="col" />
+        <el-table-column v-for="col in resultColumns" :key="col" :prop="col" :label="columnLabels[col]" />
       </el-table>
       <template #footer>
         <el-button type="primary" @click="goCreateDataMaskTask"> 数据脱敏 </el-button>
@@ -106,6 +109,7 @@ import { ElMessage } from "element-plus";
 import { Refresh, Plus } from "@element-plus/icons-vue";
 import request from "@/utils/request";
 import router from "@/router";
+import formatTime from "@/utils/day";
 
 /* ---------------- 响应式数据 ---------------- */
 // 任务列表
@@ -116,7 +120,12 @@ const tableLoading = ref(false);
 const resultVisible = ref(false);
 const currentTask = ref(null);
 const resultData = ref([]);
-const resultColumns = ref([]);
+const resultColumns = ["column", "type", "level"];
+const columnLabels = {
+  column: "字段名",
+  type: "敏感类型",
+  level: "敏感等级",
+};
 const resultLoading = ref(false);
 
 /* ---------------- 新建/编辑弹窗数据 ---------------- */
@@ -178,14 +187,10 @@ async function viewResult(task) {
   currentTask.value = task;
   resultLoading.value = true;
   try {
-    const colRes = await request.get("/data/getColumns", {
-      params: { dbName: task.dbName, tbName: task.tbName, isRemote: dbIsRemoteMap[task.dbName] },
-    });
-    resultColumns.value = colRes.data;
-    const recordRes = await request.get("/data/getRecords", {
-      params: { dbName: task.dbName, tbName: task.tbName, isRemote: dbIsRemoteMap[task.dbName] },
-    });
-    resultData.value = recordRes.data;
+    resultData.value = JSON.parse(task.columns);
+  } catch (e) {
+    console.error("解析结果失败:", e);
+    resultData.value = [];
   } finally {
     resultLoading.value = false;
   }
@@ -281,7 +286,16 @@ async function submitForm() {
 }
 
 const goCreateDataMaskTask = () => {
-  localStorage.setItem("currentCreating", JSON.stringify(currentTask.value));
+  let jsonItems = JSON.parse(JSON.stringify(currentTask.value));
+  jsonItems.columns = JSON.parse(jsonItems.columns);
+  let columns = "";
+  for (let i = 0; i < jsonItems.columns.length; i++) {
+    if (jsonItems.columns[i].level != "无") {
+      columns += jsonItems.columns[i].column + ",";
+    }
+  }
+  jsonItems.columns = columns.substring(0, columns.length - 1);
+  localStorage.setItem("currentCreating", JSON.stringify(jsonItems));
   router.push("/home/task");
 };
 
