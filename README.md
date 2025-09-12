@@ -1,5 +1,26 @@
-# Vue 3 + TypeScript + Vite
+# DataShield 接入层
 
-This template should help get you started developing with Vue 3 and TypeScript in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+## 简介
+基于 Vue 开发的敏感数据数据脱敏管理平台前端项目。可构建基于 Nginx 的 Docker 镜像。提供网关 + 前端的服务。
 
-Learn more about the recommended Project Setup and IDE Support in the [Vue Docs TypeScript Guide](https://vuejs.org/guide/typescript/overview.html#project-setup).
+## 快速开始
+
+```sh
+npm install
+npm run dev
+```
+
+## 打包为 Docker 镜像
+
+```sh
+npm run build
+docker build -t datashield/frontend .
+```
+
+## 生产环境部署
+
+```sh
+docker run --name frontend -d \
+	--add-host=host.docker.internal:host-gateway \
+	-p 80:80 datashield/frontend
+```
